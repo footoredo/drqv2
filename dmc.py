@@ -10,6 +10,7 @@ import numpy as np
 from dm_control import manipulation, suite
 from dm_control.suite.wrappers import action_scale, pixels
 from dm_env import StepType, specs
+from tamp_wrapper import TAMPWrapper
 
 
 class ExtendedTimeStep(NamedTuple):
@@ -185,7 +186,10 @@ def make(name, frame_stack, action_repeat, seed):
     # overwrite cup to ball_in_cup
     domain = dict(cup='ball_in_cup').get(domain, domain)
     # make sure reward is not visualized
-    if (domain, task) in suite.ALL_TASKS:
+    if domain == "robosuite":
+        env = TAMPWrapper(env_name=task)
+        pixels_key = 'agentview_image'
+    elif (domain, task) in suite.ALL_TASKS:
         env = suite.load(domain,
                          task,
                          task_kwargs={'random': seed},
