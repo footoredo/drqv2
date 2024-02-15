@@ -77,6 +77,9 @@ class TAMPWrapper(dm_env.Environment):
         # print(low.shape, high.shape)
         # return specs.BoundedArray(low.shape, low.dtype, minimum=low, maximum=high)
         return specs.BoundedArray((7,), low.dtype, minimum=low[:7], maximum=high[:7])
+    
+    def set_use_tamp(self, value):
+        self._env.set_use_tamp(value)
         
     def reset(self) -> TimeStep:
         obs = self._env.reset()
