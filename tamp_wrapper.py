@@ -95,7 +95,7 @@ class TAMPWrapper(dm_env.Environment):
         
     def step(self, action) -> TimeStep:
         obs, reward, done, _ = self._env.step(action)
-        self._image = obs["agentview_image"].copy()
+        # self._image = obs["agentview_image"].copy()
         self._num_step += 1
         # print(self._num_step, reward, done)
         if not done:
@@ -114,4 +114,4 @@ class TAMPWrapper(dm_env.Environment):
             )
             
     def render(self):
-        return self._image
+        return self._env.sim.render(height=512, width=512, camera_name="agentview")[::-1]
