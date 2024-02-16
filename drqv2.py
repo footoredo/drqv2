@@ -154,6 +154,8 @@ class DrQV2Agent:
 
         self.train()
         self.critic_target.train()
+        
+        self.timer = utils.ProfilerTimer()
 
     def train(self, training=True):
         self.training = training
@@ -233,14 +235,18 @@ class DrQV2Agent:
         if step % self.update_every_steps != 0:
             return metrics
 
+        self.timer.reset()
+        self.timer.activate("preprocess")
         batch = next(replay_iter)
         obs, action, reward, discount, next_obs = utils.to_torch(
             batch, self.device)
 
         # augment
+        self.timer.activate("augment")
         obs = self.aug(obs.float())
         next_obs = self.aug(next_obs.float())
         # encode
+        self.timer.activate("encode")
         obs = self.encoder(obs)
         with torch.no_grad():
             next_obs = self.encoder(next_obs)
@@ -249,14 +255,20 @@ class DrQV2Agent:
             metrics['batch_reward'] = reward.mean().item()
 
         # update critic
+        self.timer.activate("update_critic")
         metrics.update(
             self.update_critic(obs, action, reward, discount, next_obs, step))
 
         # update actor
+        self.timer.activate("update_actor")
         metrics.update(self.update_actor(obs.detach(), step))
 
         # update critic target
+        self.timer.activate("update_critic_target")
         utils.soft_update_params(self.critic, self.critic_target,
                                  self.critic_target_tau)
+        
+        self.timer.deactivate()
+        metrics.update(self.timer.summary())
 
         return metrics

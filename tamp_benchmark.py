@@ -7,7 +7,7 @@ from tamp_wrapper import TAMPWrapper
 env = TAMPWrapper("Stack")
 
 low, high = env._env.action_spec
-env.set_use_tamp(False)
+env.set_use_tamp(True)
 
 env.reset()
 

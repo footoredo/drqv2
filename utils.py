@@ -100,6 +100,38 @@ class Timer:
 
     def total_time(self):
         return time.time() - self._start_time
+    
+    
+class ProfilerTimer:
+    def __init__(self):
+        self.reset()
+        
+    def reset(self):
+        self._start_time = dict()
+        self._total_time = dict()
+        self._activated = None
+        
+    def activate(self, name):
+        t = time.time()
+        if self._activated is not None:
+            self._total_time[self._activated] += t - self._start_time[self._activated]
+        self._activated = name
+        if name is not None:
+            if name not in self._total_time:
+                self._total_time[name] = 0.
+            self._start_time[name] = t  
+        
+    def deactivate(self):
+        self.activate(None)
+        
+    def get_time(self, name):
+        return self._total_time[name]
+    
+    def summary(self):
+        _summary = dict()
+        for name, time in self._total_time.items():
+            _summary[f"timer_{name}"] = time
+        return _summary
 
 
 class TruncatedNormal(pyd.Normal):

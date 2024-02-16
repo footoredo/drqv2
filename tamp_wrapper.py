@@ -65,6 +65,8 @@ class TAMPWrapper(dm_env.Environment):
             htamp_noise_level=0,
         )
         
+        # env.set_use_tamp(False)  # for benchmarking
+        
         self._env = env
         self._image = None
         self._num_step = None
