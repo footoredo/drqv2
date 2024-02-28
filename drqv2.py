@@ -179,6 +179,7 @@ class DrQV2Agent:
     def update_critic(self, obs, action, reward, discount, next_obs, step):
         metrics = dict()
 
+        self.timer.activate("critic_update_1")
         with torch.no_grad():
             stddev = utils.schedule(self.stddev_schedule, step)
             dist = self.actor(next_obs, stddev)
@@ -187,6 +188,7 @@ class DrQV2Agent:
             target_V = torch.min(target_Q1, target_Q2)
             target_Q = reward + (discount * target_V)
 
+        self.timer.activate("critic_update_2")
         Q1, Q2 = self.critic(obs, action)
         critic_loss = F.mse_loss(Q1, target_Q) + F.mse_loss(Q2, target_Q)
 
@@ -197,6 +199,7 @@ class DrQV2Agent:
             metrics['critic_loss'] = critic_loss.item()
 
         # optimize encoder and critic
+        self.timer.activate("critic_update_3")
         self.encoder_opt.zero_grad(set_to_none=True)
         self.critic_opt.zero_grad(set_to_none=True)
         critic_loss.backward()

@@ -11,6 +11,7 @@ from dm_control import manipulation, suite
 from dm_control.suite.wrappers import action_scale, pixels
 from dm_env import StepType, specs
 from tamp_wrapper import TAMPWrapper
+from tamp_generator import TAMPStateGeneratorController
 
 
 class ExtendedTimeStep(NamedTuple):
@@ -181,14 +182,21 @@ class ExtendedTimeStepWrapper(dm_env.Environment):
         return getattr(self._env, name)
 
 
-def make(name, frame_stack, action_repeat, seed):
+def make(name, frame_stack, action_repeat, seed, work_dir, train):
     domain, task = name.split('_', 1)
     # overwrite cup to ball_in_cup
     domain = dict(cup='ball_in_cup').get(domain, domain)
     # make sure reward is not visualized
+    con = None
     if domain == "robosuite":
-        env = TAMPWrapper(env_name=task)
-        pixels_key = 'agentview_image'
+        if train:
+            con = TAMPStateGeneratorController(dict(env_name=task), num_process=8, maxsize=64, work_dir=work_dir)
+            con.start()
+            env = TAMPWrapper(env_name=task, state_queue=con.q)
+        else:
+            env = TAMPWrapper(env_name=task)
+            env.set_use_tamp(True)
+        pixels_key = env.pixels_key
     elif (domain, task) in suite.ALL_TASKS:
         env = suite.load(domain,
                          task,
@@ -214,4 +222,4 @@ def make(name, frame_stack, action_repeat, seed):
     # stack several frames
     env = FrameStackWrapper(env, frame_stack, pixels_key)
     env = ExtendedTimeStepWrapper(env)
-    return env
+    return env, con

@@ -52,10 +52,10 @@ class Workspace:
         # create logger
         self.logger = Logger(self.work_dir, use_tb=self.cfg.use_tb)
         # create envs
-        self.train_env = dmc.make(self.cfg.task_name, self.cfg.frame_stack,
-                                  self.cfg.action_repeat, self.cfg.seed)
-        self.eval_env = dmc.make(self.cfg.task_name, self.cfg.frame_stack,
-                                 self.cfg.action_repeat, self.cfg.seed)
+        self.train_env, self.tamp_gen_con = dmc.make(self.cfg.task_name, self.cfg.frame_stack,
+                                  self.cfg.action_repeat, self.cfg.seed, self.work_dir, train=True)
+        self.eval_env, _ = dmc.make(self.cfg.task_name, self.cfg.frame_stack,
+                                 self.cfg.action_repeat, self.cfg.seed, self.work_dir, train=False)
         # create replay buffer
         data_specs = (self.train_env.observation_spec(),
                       self.train_env.action_spec(),
@@ -63,7 +63,8 @@ class Workspace:
                       specs.Array((1,), np.float32, 'discount'))
 
         self.replay_storage = ReplayBufferStorage(data_specs,
-                                                  self.work_dir / 'buffer')
+                                                  self.work_dir / 'buffer',
+                                                  self.cfg.nstep)
 
         self.replay_loader = make_replay_loader(
             self.work_dir / 'buffer', self.cfg.replay_buffer_size,
@@ -130,6 +131,9 @@ class Workspace:
         eval_every_step = utils.Every(self.cfg.eval_every_frames,
                                       self.cfg.action_repeat)
 
+        # if self.tamp_gen_con is not None:
+        #     self.tamp_gen_con.start()
+                
         episode_step, episode_reward = 0, 0
         time_step = self.train_env.reset()
         self.replay_storage.add(time_step)
@@ -188,6 +192,9 @@ class Workspace:
             self.train_video_recorder.record(time_step.observation)
             episode_step += 1
             self._global_step += 1
+        
+        if self.tamp_gen_con is not None:
+            self.tamp_gen_con.stop()
 
     def save_snapshot(self):
         snapshot = self.work_dir / 'snapshot.pt'

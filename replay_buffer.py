@@ -35,9 +35,10 @@ def load_episode(fn):
 
 
 class ReplayBufferStorage:
-    def __init__(self, data_specs, replay_dir):
+    def __init__(self, data_specs, replay_dir, nstep):
         self._data_specs = data_specs
         self._replay_dir = replay_dir
+        self._nstep = nstep
         replay_dir.mkdir(exist_ok=True)
         self._current_episode = defaultdict(list)
         self._preload()
@@ -71,11 +72,12 @@ class ReplayBufferStorage:
     def _store_episode(self, episode):
         eps_idx = self._num_episodes
         eps_len = episode_len(episode)
-        self._num_episodes += 1
-        self._num_transitions += eps_len
-        ts = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-        eps_fn = f'{ts}_{eps_idx}_{eps_len}.npz'
-        save_episode(episode, self._replay_dir / eps_fn)
+        if eps_len >= self._nstep:
+            self._num_episodes += 1
+            self._num_transitions += eps_len
+            ts = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+            eps_fn = f'{ts}_{eps_idx}_{eps_len}.npz'
+            save_episode(episode, self._replay_dir / eps_fn)
 
 
 class ReplayBuffer(IterableDataset):
